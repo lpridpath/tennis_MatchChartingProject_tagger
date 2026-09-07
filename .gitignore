@@ -1,0 +1,6 @@
+# tldraw live canvas — mirror of docs/diagrams.md; source of truth is the Mermaid, not this file
+MCP | Match Charting Project.tldraw
+*.tldraw
+
+# OS / editor cruft
+.DS_Store
