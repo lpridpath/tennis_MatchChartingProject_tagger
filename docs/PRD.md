@@ -1,171 +1,173 @@
 # PRD — MCP Tagger (working title)
 
-> **Status:** v0.1 — for review/red-line · **Owner:** Landon · **Date:** 2026-09-06
-> **🟡 ASSUMPTION** markers flag values still needing your confirmation.
+> **Status:** v0.2 — for review/red-line · **Owner:** Landon · **Date:** 2026-09-06
 > This PRD is the product-level driver. It sits *above* the wayfinder map
 > ([#1](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/1)); the map's
-> decision tickets resolve the *how*. Domain facts live in `reference/` — linked, not restated.
+> decision tickets resolve the *how*. Domain facts live in `reference/`; the user journey in
+> `docs/e2e-flow.md`.
 >
-> **v0.1 changes:** video controls pulled out of MVP (now a future enhancement); Jeff Sackmann added
-> as a downstream persona; personas reframed to serve *both* novices and experts; success metrics
-> set; undo/correct promoted to P0; cross-platform made a hard requirement.
+> **v0.2 — major reframe:** the tool is a permanent **input bridge that drives the existing
+> MatchChart `.xlsm`**, not a standalone app that replaces it. The workbook stays the system of
+> record (score, stats, CSV, metadata, submission); we replace the *code-typing* with a Stream Deck
+> (and other input sources). Consequences: no in-app capture model, scorer, or CSV exporter — those
+> are the workbook's job. Input is pluggable (deck → keyboard → other). See §2, §5, §6.
 
 ---
 
 ## 1. Problem & background
 
 The [Match Charting Project](https://github.com/JeffSackmann/tennis_MatchChartingProject) (MCP) is a
-crowdsourced dataset of shot-by-shot tennis data. Contributors chart matches **by hand** into a
-macro Excel workbook (`MatchChart 0.3.2.xlsm`), typing a terse alphanumeric code per point while
-scrubbing video in a *separate* player app. The flow is documented in
-`reference/mcp-charting-workflow.md`; the notation in `reference/mcp-shorthand-grammar.md`.
+crowdsourced dataset of shot-by-shot tennis data. Contributors chart matches **by hand** into a macro
+Excel workbook (`MatchChart 0.3.2.xlsm`), typing a terse alphanumeric code per point while scrubbing
+video in a *separate* player. The flow is in `reference/mcp-charting-workflow.md`; the notation in
+`reference/mcp-shorthand-grammar.md`.
 
-That flow is slow and high-friction: rapid code typing and a steep notation-learning curve make it
-both intimidating for newcomers and tedious for veterans. **The core problem: charting is hard to
-start and slow to do.**
+The workbook is proven and is what the parent project accepts — it auto-derives score, generates the
+stats and CSVs, and defines the submission format. The pain is **not** the workbook; it's the
+**data entry**: typing terse codes fast, and a steep notation-learning curve that's intimidating for
+newcomers and tedious for veterans. **That input step is the whole problem this project attacks.**
 
 ## 2. The thesis (product overview)
 
-A desktop **companion/sidecar** — *not* a fork of MCP — built around an **Elgato Stream Deck XL**
-(32 labeled, context-aware keys). Two MVP pillars:
+A desktop **input bridge** that sits in front of the real MatchChart `.xlsm` and makes charting fast
+and approachable — **without replacing the workbook**. Core pillars:
 
-1. **Replace keyboard code-typing with the deck** — one key per notation token instead of memorized
-   codes; context-aware layouts show what's valid next.
-2. **Validate as you go** — malformed points are caught immediately, not surfaced later as a wrong
-   auto-score.
+1. **Replace code-typing with a Stream Deck XL** — one key per notation token, on-key labels,
+   context-aware layouts that show what's valid next. Input is **pluggable**: Stream Deck is the
+   default/primary; keyboard is the built-in alternative; other sources come later.
+2. **Drive the workbook directly** — assembled MCP code strings are written into the workbook's point
+   cells (`1st`/`2nd`); *next / previous point* navigates its rows; changes autosave.
+3. **Validate as you type** — a point's code string is checked for well-formedness before it lands in
+   the cell, so the workbook's own "wrong auto-score" signal fires far less often.
 
-Output stays **100% MCP-compatible** — submittable data, not a competing format.
-
-**Future vision (post-MVP):** fold video *into* the app — playback controllable from the deck, each
-point bound to a video timestamp — collapsing today's video-app + Excel split into one surface. See
-§6.2; deliberately **out of the MVP**.
+The workbook remains the **system of record**: it does score derivation, stats, CSV generation,
+metadata, and submission. We are bound to it because the parent MCP project is bound to it.
 
 ## 3. Users / personas
 
-The tool is **for everyone who charts** — it should do *different things* for two tiers:
+The tool is **for everyone who charts** — doing *different things* for two tiers:
 
-- **Novice charters** — value = **approachability**. Lower the barrier to entry: guided,
-  context-sensitive layouts that surface valid next tokens so you can chart without memorizing the
-  notation or constantly checking instructions.
-- **Expert charters** — value = **efficiency + power tools**. Fast paths, modifiers, minimal
-  prompting; get out of the way and let a proficient charter fly.
+- **Novice charters** — value = **approachability**: guided, context-sensitive layouts surface valid
+  next tokens so you can chart without memorizing the notation.
+- **Expert charters** — value = **efficiency + power tools**: fast paths, modifiers, minimal prompting.
+- **Downstream consumer — Jeff Sackmann (MCP coordinator).** Output is his `.xlsm`, submitted as
+  today. His format *is* our constraint; because we write into his workbook, compatibility is
+  structural, not just a hoped-for export. **No clean-up on his end.**
+- **Initial operator / dogfooder — Landon.** First user + test-user recruiter; develops on macOS.
 
-- **Downstream consumer — Jeff Sackmann (MCP coordinator).** The charted output is ultimately sent to
-  him for inclusion in the dataset. He is a persona because **his acceptance defines "valid output"**:
-  the tool must emit well-formed, submittable MCP data with no manual clean-up on his end.
-
-- **Initial operator / dogfooder — Landon.** First real user and test-user recruiter; develops and
-  validates on macOS.
-
-**Single-operator, not multi-user:** one person charts a given match at a time (no real-time
-collaboration). The *user base* is broad; concurrent collaborative charting is a non-goal (§5).
+**Single-operator, not multi-user:** one person charts one match at a time. Broad user base;
+real-time collaboration is a non-goal (§5).
 
 ## 4. Goals & success metrics
 
-**Primary goal:** make charting **approachable for novices** and **fast for experts**, at MCP's
-intermediate tier (serve dir + shot type + shot direction), with **zero loss of output fidelity**.
+**Primary goal:** make charting **approachable for novices** and **fast for experts** at MCP's
+intermediate tier, with **zero loss of fidelity** — because we write straight into the accepted
+workbook.
 
 **Success metrics:**
-- **Speed:** chart a match in **~2–3× real match length** at intermediate tier (comparable wall-clock
-  to a proficient Excel charter — the win is far lower *cognitive load* and learning curve, plus
-  expert power-tools, not just raw time).
-- **Accuracy:** **0 malformed points** reach export (blocked by live validation); output parses
-  cleanly into MCP `-points`.
-- **Ergonomics / adoption:** the tool is **preferred over the Excel flow**, and reaches **some real
-  adoption** — i.e., Landon can recruit test users who chart with it.
+- **Speed:** chart a match in **~2–3× real match length** at intermediate tier — the win is lower
+  cognitive load + expert power-tools, not just wall-clock.
+- **Accuracy:** **0 malformed code strings** written to the workbook (blocked by live validation).
+- **Ergonomics / adoption:** **preferred over hand-typing into the workbook**, and reaches **some real
+  adoption** (Landon can recruit test users).
 
-**Non-metric bar:** every match charted must round-trip to a valid MCP submission.
+**Non-metric bar:** a workbook charted via the tool is byte-for-byte a valid MCP submission — because
+it *is* a MatchChart workbook.
 
 ## 5. Non-goals (v1)
 
-Ruled out for this version:
-- **Integrated video playback / control and per-point timestamp binding** — v1 assumes video runs in
-  a *separate* app; deferred to the post-MVP "one surface" enhancement (§2, §6.2).
+- **A standalone data model / our own CSV export / our own scorer** — delegated entirely to the
+  workbook. We never re-implement what the `.xlsm` already does.
+- **Integrated video playback / control / timestamps** — video runs in a separate app; deferred to a
+  post-MVP enhancement (§6.5).
 - Machine-generated tag suggestions / auto-charting.
-- **Real-time multi-user / crowd** charting or collaboration.
-- **Live-mode implementation** (v1 is post-hoc; live designed-around, not built).
+- **Real-time multi-user / crowd** charting.
+- **Live-mode implementation** (v1 is post-hoc; designed-around, not built).
 - Custom notation tokens beyond the MCP vocabulary.
-- Automated match selection, duplicate-avoidance, or email submission.
+- Modifying the workbook's format, macros, or metadata layout.
 
 ## 6. Scope & requirements
 
-Priorities: **P0** = MVP (must ship in v1) · **P1** = v1 if time · **P2** = later/fog.
+Priorities: **P0** = MVP · **P1** = v1 if time · **P2** = later/fog.
 
-### 6.1 Functional — charting core
-- **P0** One key per MCP token via the Stream Deck XL, with on-key labels.
-- **P0** Context-sensitive key layouts that follow rally state (serve → return → rally → ending) and
-  surface valid next tokens — the primary lever for **novice approachability**.
-- **P0** Support charting at **any complexity tier** (beginner→expert); direction/depth optional.
-- **P0** Reach "unknown" escapes (`0`,`q`,`e`,`R`/`S`) and point-enders quickly.
-- **P0** Live validation: reject/flag a malformed point before it's committed.
-- **P0** **Undo / correct the last shot or point** — too central to defer; corrections are constant
-  in real charting.
-- **P1** Expert power-tools: modifier keys, shortcuts, layout customization.
-- **P2** Keyboard fallback for coding (deck optional).
+### 6.1 Input & mapping
+- **P0** **Pluggable input sources**, priority-ordered: **Stream Deck XL** (default/primary) →
+  **keyboard** (built-in alternative) → other (later). An input-source abstraction, not a hard-wired
+  device. *(Ticket [#4](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/4))*
+- **P0** One key/keystroke per MCP token, on-key labels (deck).
+- **P0** Context-sensitive layouts that follow rally state (serve → return → rally → ending) and
+  surface valid next tokens — the main lever for **novice approachability**.
+- **P0** Support charting at **any tier** (beginner→expert); direction/depth optional.
+- **P0** Fast reach to "unknown" escapes (`0`,`q`,`e`,`R`/`S`) and point-enders.
+- **P0** Undo last shot; re-edit a prior point (navigate to its cell and re-enter its syntax — §6.2).
 
-### 6.2 Video — DEFERRED (post-MVP)
-- **P2 / future** Load, play, precisely seek, and **frame-step** local video *inside* the app.
-- **P2 / future** Control playback from the Stream Deck.
-- **P2 / future** Bind each charted point to a **video timestamp**.
+### 6.2 Workbook integration (the core)
+- **P0** Target/open a MatchChart `.xlsm`; write assembled MCP code strings into the point cells
+  (`1st`/`2nd`). *(Ticket [#3](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/3) — re-scoped to the code-string builder + validator + cell write.)*
+- **P0** **Next / previous point** navigation — move to the corresponding workbook row/cell (there is
+  no separate "commit"; moving to the next point is the commit).
+- **P0** **Autosave** on every next-point.
+- **P0** **Operator marks match end** (not auto-detected).
+- **P0** Preserve the workbook's own behavior — the macro-driven score/next-row/stats must still fire;
+  don't corrupt the file.
+- **CRITICAL / OPEN:** *how* the app writes into a macro `.xlsm` while its macros still run, on
+  Windows (majority) and macOS — Excel automation vs. driving a focused Excel vs. file-level writes.
+  This is the linchpin technical decision. *(New ticket — see §8.)*
 
-> **MVP assumption:** the operator watches the match in whatever player they like (VLC, YouTube,
-> etc.), *separately*. The tagger does **not** control video or capture timestamps in v1. This keeps
-> the MVP small and gets end-to-end validation faster; integrated video is the first major follow-on.
+### 6.3 Validation
+- **P0** Assemble and **validate** a well-formed MCP string (per `reference/mcp-shorthand-grammar.md`)
+  before it's written to a cell — validate-as-you-type.
 
-### 6.3 Functional — data & export
-- **P0** Capture into an internal model that is a **superset** of MCP (adds raw keystrokes; timestamps
-  when video lands) and exports **losslessly** to canonical MCP code strings. *(Ticket
-  [#3](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/3))*
-- **P0** Export to MCP CSVs (`-matches`, `-points`, `-stats`). *(Ticket
-  [#6](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/6))*
-- **P0** Derive score / set / game boundaries (not stored) — makes mis-entry detectable.
-- **P0** Enter match metadata (players server-first, hands, tournament/round/date/surface, final-set
-  rule).
-- **P1** Save / resume an in-progress chart.
+### 6.4 Delegated to the workbook (explicitly NOT built)
+Score/game derivation · stats · CSV export · match metadata entry (done in the `.xlsm`, §Q2) ·
+submission. The tool must not duplicate these.
 
-### 6.4 Non-functional
-- **P0** Per-key press → app response at interactive latency (no perceptible lag during a rally).
-- **P0** **Cross-platform is a hard requirement.** Windows, macOS, and Linux must all be supported;
-  **Windows is expected to be the majority of users.** Mac-first is only the *development* sequence
-  (Landon's machine), not a scope limit.
-  ✅ **Decided:** the requirement is **cross-platform from one Electron codebase** (Windows/Mac/Linux),
-  *not* per-OS native UI. One codebase ships to all three; Windows is the expected majority.
-- **P0** Runs fully **offline** (local device; local files).
-- **P1** Crash / power loss mid-chart doesn't lose more than the current point.
+### 6.5 Video — DEFERRED (post-MVP)
+- **P2 / future** In-app local video with frame-step, deck-controlled playback, per-point timestamps.
+  v1 assumes the operator watches in a separate player.
+
+### 6.6 Non-functional
+- **P0** Input press → response at interactive latency (no lag during a rally).
+- **P0** **Cross-platform from one Electron codebase** (Windows/Mac/Linux); **Windows is the expected
+  majority**. Mac-first only for development. *(The workbook-write mechanism, §6.2, is the main
+  cross-platform risk.)*
+- **P0** Runs **offline** (local device, local workbook).
+- **P0** Autosave each next-point → crash/power-loss loses ≤ the current point.
 
 ## 7. Solution constraints (locked decisions)
 
-From the wayfinder destination round — see map [#1](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/1):
-- **Stack:** Electron + TypeScript. *(feasibility GREEN — ticket #2; also the cross-platform vehicle,
-  §6.4.)*
-- **Device:** direct Stream Deck XL control (`@elgato-stream-deck/node`, main process + IPC), Elgato
-  app closed.
-- **Output:** strict, validated MCP shorthand (layer 1, locked); superset capture model (layer 2);
-  fully customizable input mapping (layer 3).
-- **Video:** *(deferred)* — when built, Electron ships proprietary codecs so H.264/mp4 + VP9/webm play
-  natively (ticket #2 findings), so the future enhancement has no codec blocker.
+- **Stack:** Electron + TypeScript. *(feasibility GREEN — ticket #2; cross-platform vehicle.)*
+- **Primary input:** direct Stream Deck XL control (`@elgato-stream-deck/node`, main process + IPC),
+  Elgato app closed; behind a **pluggable input-source abstraction** (keyboard next).
+- **System of record:** the MatchChart `.xlsm` — we drive it, we don't replace it.
+- **Output vocabulary:** strict MCP shorthand (layer 1, locked) — structural, since we write into the
+  workbook. Input mapping (layer 3) is customizable. *(The former layer-2 "superset capture model" is
+  dropped — the workbook is the model.)*
 
 ## 8. Open decisions (in flight)
 
 Tracked as wayfinder tickets, blocking the final spec ([#7](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/7)):
-- **#3** Capture data model + MCP exporter *(claimed, paused for this PRD)*
-- **#4** Stream Deck key-mapping & paging model
-- **#6** Match/session lifecycle & CSV export
-- **#5** Video-playback ↔ tagging interaction — **moved to post-MVP** per §6.2; removed from the v1
-  destination.
+- **NEW · `.xlsm` write mechanism** — the linchpin: how to write cells while macros run, cross-platform.
+- **#3** *(re-scoped)* In-app MCP code-string builder + validator + cell write.
+- **#4** *(re-scoped)* Input mapping across sources (Stream Deck + keyboard).
+- **#6** *(re-scoped)* Session & workbook targeting: open/select `.xlsm`, row navigation, autosave,
+  operator-marked match end.
 
-## 9. Assumptions — status
+## 9. Assumptions — resolved
 
-1. ✅ **Single operator** per session (broad user base, no real-time collaboration) — §3.
-2. ✅ **Speed target ~2–3× match length**; primary win is cognitive load + expert power — §4.
-3. ✅ **Adoption metric**: preferred over Excel + recruits real test users — §4.
-4. ✅ **Cross-platform via Electron**, one codebase for Windows/Mac/Linux (not per-OS native) — §6.4.
+1. ✅ Single operator per session; broad user base; no real-time collaboration.
+2. ✅ Speed target ~2–3× match length; primary win = cognitive load + expert power.
+3. ✅ Adoption = preferred over hand-typing + recruits real test users.
+4. ✅ Cross-platform via Electron (one codebase, Win/Mac/Linux).
+5. ✅ Input is pluggable: Stream Deck → keyboard → other.
+6. ✅ Workbook is the permanent system of record (metadata, score, stats, CSV, submission).
 
-## 10. Milestones (indicative, non-binding)
+## 10. Roadmap (indicative)
 
 1. **Spec complete** — decision tickets resolved, #7 assembled. *(this planning effort)*
-2. **Charting-core MVP** — deck input + context layouts + live validation + undo, **no video**.
-3. **Export** — MCP CSVs + round-trip validated against the real MCP dataset.
-4. **First real match charted end-to-end** (video watched separately) — the E2E validation + adoption
-   test.
-5. *(Post-MVP)* Integrated video + timestamp binding — the "one surface" enhancement.
+2. **Write-mechanism spike** — prove we can drive the `.xlsm` on the target OS(es).
+3. **Charting-core MVP** — deck + keyboard input, context layouts, live validation, undo, writing into
+   the workbook with next/prev + autosave.
+4. **First real match charted end-to-end** into a submittable workbook (video watched separately) — the
+   E2E + adoption test.
+5. *(Post-MVP)* Visualization tools + quality-of-life improvements; later, integrated video.
