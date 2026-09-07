@@ -26,7 +26,7 @@ flowchart LR
     direction TB
     IN["Input abstraction<br/>#4"]
     BLD["Code-string builder<br/>+ validator · ▶ #3"]
-    WR["Workbook writer<br/>⛭ #8 (linchpin)"]
+    WR["Workbook writer<br/>file-level · ✅ #8"]
     IN --> BLD --> WR
   end
 
@@ -38,7 +38,7 @@ flowchart LR
   SD --> IN
   KB --> IN
   OTH -.-> IN
-  WR -->|"writes cells 1st/2nd, next/prev rows"| XLSM
+  WR -->|"writes Y/Z/AC (file-level); Excel recalcs on open"| XLSM
   XLSM --> SUB --> JS
   GR -.constrains.-> BLD
 ```
@@ -62,12 +62,12 @@ flowchart TD
 
   MAP["🗺 Wayfinder map · #1"]
   R2["#2 Electron feasibility<br/>✅ closed"]
-  T8["#8 .xlsm write mechanism<br/>⛭ frontier · LINCHPIN"]
+  T8["#8 .xlsm write mechanism<br/>✅ closed · hybrid (headless v1)"]
   T3["#3 Code-string builder+validator<br/>▶ claimed"]
   T4["#4 Input mapping (deck+kbd)<br/>⛭ frontier"]
-  T6["#6 Session & workbook targeting<br/>⏸ blocked by #8"]
+  T6["#6 Session & workbook targeting<br/>⛭ frontier"]
   T5["#5 Video ↔ tagging<br/>✅ closed · ↝ post-MVP"]
-  T7["#7 Assemble v1 spec<br/>⏸ blocked by #3,#4,#6,#8"]
+  T7["#7 Assemble v1 spec<br/>⏸ blocked by #3,#4,#6"]
   BUILD["🔨 Build effort"]
 
   REF --> PRD --> MAP
@@ -88,4 +88,4 @@ flowchart TD
   T7 --> BUILD
 ```
 
-**Frontier (takeable now):** #8 (linchpin), #3 (claimed), #4.
+**Frontier (takeable now):** #3 (claimed), #4, #6.

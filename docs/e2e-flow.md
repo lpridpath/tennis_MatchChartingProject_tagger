@@ -61,12 +61,19 @@ For each point:
 11. **Point end:** enter the ending — winner `*`, error (`n/w/d/x/!/e`) + `#`/`@`, or a whole-point
     special (`S/R/P/Q`).
 12. **Validate + write:** the assembled string is validated against the grammar; if well-formed it's
-    **written into the workbook cell**. If malformed, the app flags it and won't advance.
-13. **Next point:** the operator presses **Next point** → the app writes/confirms the cell,
-    **autosaves the workbook**, and moves to the next row's `1st` cell. The workbook's own macros
-    derive the score and populate the next row. (No separate commit; Next *is* the commit.)
+    **written into the workbook cell** (`MATCH!Y/Z/AC` of the current row). If malformed, the app
+    flags it and won't advance.
+13. **Next point:** the operator presses **Next point** → the app writes the cell(s), **autosaves the
+    `.xlsm` file**, and moves to the next row's `1st` cell. (No separate commit; Next *is* the
+    commit.) In v1 Excel isn't running — the workbook's formulas recalc the **score** when it's next
+    opened in Excel (they're pre-filled to row 505; no macro needed).
 
 ### 4. Correct a mistake (P0)
+> **No live score in v1.** Because Excel isn't running, there's no running score on screen during
+> charting — the app's own **grammar validation** is the live safety net. The score cross-check
+> happens when the workbook is opened in Excel (recalc on open). A live in-app score is the post-MVP
+> live-Excel enhancement.
+
 14. **Undo last shot** — drop the last token from the in-progress point before moving on.
 15. **Previous point** — press **Previous point** to navigate back to an earlier point's **cell**; the
     app shows that cell, and the operator simply **re-inputs the syntax** for that point, overwriting
@@ -92,7 +99,8 @@ For each point:
 - **Unknown detail** mid-rally → `0`/`q`/`e` escapes; keep moving.
 - **Let / time violation / point penalty / incorrect challenge** → their special codes mid-loop.
 - **Deck disconnects mid-match** → fall back to keyboard, or pause; the workbook is already saved.
-- **Derived score looks wrong** → signal of an earlier mis-entry → Previous point → re-input.
+- **Derived score looks wrong** (seen when the workbook is opened in Excel) → signal of an earlier
+  mis-entry → reopen the app, Previous point → re-input.
 
 ## Resolved from v0 (Landon's answers)
 1. **Deck not found** → pluggable input; auto-fallback to keyboard (deck → keyboard → other).

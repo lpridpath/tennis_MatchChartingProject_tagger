@@ -1,6 +1,6 @@
 # PRD — MCP Tagger (working title)
 
-> **Status:** v0.2 — for review/red-line · **Owner:** Landon · **Date:** 2026-09-06
+> **Status:** v0.3 — for review/red-line · **Owner:** Landon · **Date:** 2026-09-06
 > This PRD is the product-level driver. It sits *above* the wayfinder map
 > ([#1](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/1)); the map's
 > decision tickets resolve the *how*. Domain facts live in `reference/`; the user journey in
@@ -110,9 +110,12 @@ Priorities: **P0** = MVP · **P1** = v1 if time · **P2** = later/fog.
 - **P0** **Operator marks match end** (not auto-detected).
 - **P0** Preserve the workbook's own behavior — the macro-driven score/next-row/stats must still fire;
   don't corrupt the file.
-- **CRITICAL / OPEN:** *how* the app writes into a macro `.xlsm` while its macros still run, on
-  Windows (majority) and macOS — Excel automation vs. driving a focused Excel vs. file-level writes.
-  This is the linchpin technical decision. *(New ticket — see §8.)*
+- **RESOLVED (#8):** the workbook has **no macros** — score/stats are ~8,900 native formulas
+  (pre-filled to row 505) + one UDF (`isNetPoint`); input cells `MATCH!Y/Z/AC` from row 18. **v1
+  writes headlessly at the file level** (`exceljs`/SheetJS, preserving the VBA blob, `forceFullCalc`);
+  **Excel recalcs on open**, so there's **no live score during charting** in v1 (our grammar
+  validation still catches malformed strings). Driving live Excel for a real-time score is
+  **post-MVP**. Details: `reference/xlsm-integration-notes.md`.
 
 ### 6.3 Validation
 - **P0** Assemble and **validate** a well-formed MCP string (per `reference/mcp-shorthand-grammar.md`)
@@ -129,8 +132,8 @@ submission. The tool must not duplicate these.
 ### 6.6 Non-functional
 - **P0** Input press → response at interactive latency (no lag during a rally).
 - **P0** **Cross-platform from one Electron codebase** (Windows/Mac/Linux); **Windows is the expected
-  majority**. Mac-first only for development. *(The workbook-write mechanism, §6.2, is the main
-  cross-platform risk.)*
+  majority**. Mac-first only for development. *(v1's headless file-level write is cross-platform; the
+  post-MVP live-Excel drive is the platform-specific part.)*
 - **P0** Runs **offline** (local device, local workbook).
 - **P0** Autosave each next-point → crash/power-loss loses ≤ the current point.
 
@@ -143,11 +146,13 @@ submission. The tool must not duplicate these.
 - **Output vocabulary:** strict MCP shorthand (layer 1, locked) — structural, since we write into the
   workbook. Input mapping (layer 3) is customizable. *(The former layer-2 "superset capture model" is
   dropped — the workbook is the model.)*
+- **Workbook write (#8, resolved):** v1 = headless file-level write (`exceljs`, cross-platform, no
+  Excel needed); a `WorkbookWriter` interface leaves room for a post-MVP live-Excel impl.
 
 ## 8. Open decisions (in flight)
 
 Tracked as wayfinder tickets, blocking the final spec ([#7](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/7)):
-- **NEW · `.xlsm` write mechanism** — the linchpin: how to write cells while macros run, cross-platform.
+- ✅ **#8 `.xlsm` write mechanism — RESOLVED:** no macros; headless file-level write for v1, live-Excel post-MVP.
 - **#3** *(re-scoped)* In-app MCP code-string builder + validator + cell write.
 - **#4** *(re-scoped)* Input mapping across sources (Stream Deck + keyboard).
 - **#6** *(re-scoped)* Session & workbook targeting: open/select `.xlsm`, row navigation, autosave,
@@ -165,9 +170,10 @@ Tracked as wayfinder tickets, blocking the final spec ([#7](https://github.com/l
 ## 10. Roadmap (indicative)
 
 1. **Spec complete** — decision tickets resolved, #7 assembled. *(this planning effort)*
-2. **Write-mechanism spike** — prove we can drive the `.xlsm` on the target OS(es).
+2. **Headless workbook write** — write into the `.xlsm` (exceljs) at cells Y/Z/AC; verify Excel
+   recalcs correctly on open.
 3. **Charting-core MVP** — deck + keyboard input, context layouts, live validation, undo, writing into
    the workbook with next/prev + autosave.
 4. **First real match charted end-to-end** into a submittable workbook (video watched separately) — the
    E2E + adoption test.
-5. *(Post-MVP)* Visualization tools + quality-of-life improvements; later, integrated video.
+5. *(Post-MVP)* Live-Excel drive (real-time score); visualization tools + QoL; later, integrated video.

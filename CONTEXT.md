@@ -22,7 +22,16 @@ any use that conflicts with a definition here.
 - **Point** — one charted rally, entered into one workbook row (cells `1st`, optional `2nd`, `Notes`).
   The unit of navigation.
 
-- **Point cell** — the workbook cell (`1st` or `2nd`) a code string is written into.
+- **Point cell** — the workbook cell a code string is written into. Concretely, on sheet `MATCH`
+  from row 18: `Y` = 1st serve, `Z` = 2nd serve, `AC` = rally.
+
+- **Recalc-on-open** — the workbook has no macros; score/stats are native formulas (pre-filled to row
+  505). v1 writes cells headlessly (Excel not running), and Excel recalculates them when the file is
+  next opened. So there is no live score during charting in v1.
+
+- **Workbook writer** — the app component that writes code strings into the workbook. v1 = a headless
+  file-level writer (`exceljs`); a post-MVP live-Excel writer (COM/AppleScript) can sit behind the
+  same interface for a real-time score.
 
 - **Next / previous point** — navigation between workbook rows. There is **no separate "commit"** —
   moving to the next point *is* the commit, and it autosaves.
