@@ -1,6 +1,6 @@
 # PRD — MCP Tagger (working title)
 
-> **Status:** v0.1 DRAFT — for review/red-line · **Owner:** Landon · **Date:** 2026-09-06
+> **Status:** v0.1 — for review/red-line · **Owner:** Landon · **Date:** 2026-09-06
 > **🟡 ASSUMPTION** markers flag values still needing your confirmation.
 > This PRD is the product-level driver. It sits *above* the wayfinder map
 > ([#1](https://github.com/lpridpath/tennis_MatchChartingProject_tagger/issues/1)); the map's
@@ -128,11 +128,8 @@ Priorities: **P0** = MVP (must ship in v1) · **P1** = v1 if time · **P2** = la
 - **P0** **Cross-platform is a hard requirement.** Windows, macOS, and Linux must all be supported;
   **Windows is expected to be the majority of users.** Mac-first is only the *development* sequence
   (Landon's machine), not a scope limit.
-  **🟡 ASSUMPTION / decision to confirm:** Electron gives cross-platform (incl. Windows) from one
-  codebase, but is *not* OS-native UI. If "native application on each OS" is a hard requirement
-  (rather than "runs well on each OS"), that **reopens the stack decision** (#2/#7). Claude's read:
-  Electron satisfies "must support other OSes" and keeps one codebase — recommend treating cross-
-  platform-from-one-codebase as the requirement, not per-OS native widgets.
+  ✅ **Decided:** the requirement is **cross-platform from one Electron codebase** (Windows/Mac/Linux),
+  *not* per-OS native UI. One codebase ships to all three; Windows is the expected majority.
 - **P0** Runs fully **offline** (local device; local files).
 - **P1** Crash / power loss mid-chart doesn't lose more than the current point.
 
@@ -162,8 +159,7 @@ Tracked as wayfinder tickets, blocking the final spec ([#7](https://github.com/l
 1. ✅ **Single operator** per session (broad user base, no real-time collaboration) — §3.
 2. ✅ **Speed target ~2–3× match length**; primary win is cognitive load + expert power — §4.
 3. ✅ **Adoption metric**: preferred over Excel + recruits real test users — §4.
-4. 🟡 **Cross-platform via Electron (one codebase) vs. per-OS native** — confirm Electron satisfies
-   "must support other OSes" (§6.4). Only open assumption.
+4. ✅ **Cross-platform via Electron**, one codebase for Windows/Mac/Linux (not per-OS native) — §6.4.
 
 ## 10. Milestones (indicative, non-binding)
 
